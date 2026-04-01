@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MobiliCare v2 — Smart Sensor Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0f1117;--surface:#181b24;--surface2:#1e2130;--surface3:#252838;--border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.12);--text:#e8eaf0;--text2:#8b8fa8;--text3:#555870;--green:#00c48c;--green-dim:rgba(0,196,140,0.12);--amber:#f5a623;--amber-dim:rgba(245,166,35,0.12);--red:#f05252;--red-dim:rgba(240,82,82,0.12);--blue:#4f8ef7;--blue-dim:rgba(79,142,247,0.12);--r:10px;--r-lg:14px}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;min-height:100vh}
+.layout{display:flex;min-height:100vh}
+.sidebar{width:230px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;position:sticky;top:0;height:100vh}
+.logo-wrap{padding:20px 18px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.logo-icon{width:34px;height:34px;background:var(--green);border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.logo-icon svg{width:18px;height:18px;stroke:#000;stroke-width:2.5;fill:none}
+.logo-name{font-size:15px;font-weight:600;letter-spacing:-.3px;color:var(--text)}
+.logo-ver{font-size:11px;color:var(--text3);font-family:'IBM Plex Mono',monospace}
+.nav{padding:14px 10px;flex:1}
+.nav-lbl{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:1px;padding:8px 10px 4px}
+.nav-item{display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:8px;cursor:pointer;color:var(--text2);font-size:13px;transition:all .15s;margin-bottom:2px}
+.nav-item:hover{background:var(--surface2);color:var(--text)}
+.nav-item.active{background:var(--green-dim);color:var(--green)}
+.nav-item svg{width:15px;height:15px;flex-shrink:0;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round}
+.nav-badge{margin-left:auto;color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px}
+.nb-red{background:var(--red);animation:pulse 2s infinite}
+.nb-amber{background:var(--amber)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
+.sidebar-foot{padding:14px 16px;border-top:1px solid var(--border);font-size:12px;color:var(--text3)}
+.sidebar-foot strong{color:var(--text2);font-weight:500;display:block;font-size:13px}
+.main{flex:1;overflow-x:hidden;display:flex;flex-direction:column}
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 26px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:20}
+.page-title{font-size:15px;font-weight:600;letter-spacing:-.2px}
+.page-sub{font-size:11px;color:var(--text3);margin-top:1px;font-family:'IBM Plex Mono',monospace}
+.topbar-right{display:flex;align-items:center;gap:10px}
+.clock{font-size:13px;font-family:'IBM Plex Mono',monospace;color:var(--text2)}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;font-size:12px;font-weight:500;cursor:pointer;border:1px solid var(--border2);background:transparent;color:var(--text);font-family:inherit;transition:all .15s}
+.btn:hover{background:var(--surface2)}
+.btn svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round}
+.btn-green{background:var(--green);color:#000;border-color:var(--green);font-weight:600}
+.btn-green:hover{background:#00a876;border-color:#00a876}
+.content{padding:22px 26px;flex:1}
+.alert-banner{display:flex;align-items:center;gap:12px;padding:11px 16px;border-radius:var(--r);background:var(--red-dim);border:1px solid rgba(240,82,82,0.25);margin-bottom:18px}
+.alert-banner-dot{width:8px;height:8px;border-radius:50%;background:var(--red);flex-shrink:0;animation:pulse 1.2s infinite}
+.alert-banner-text{font-size:13px;color:var(--red);flex:1}
+.alert-banner-close{cursor:pointer;color:var(--red);opacity:.6;font-size:16px;line-height:1}
+.stats-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:20px}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:16px 18px}
+.stat-label{font-size:11px;color:var(--text3);font-weight:500;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+.stat-val{font-size:26px;font-weight:600;letter-spacing:-1px;line-height:1;font-family:'IBM Plex Mono',monospace}
+.stat-val.red{color:var(--red)}.stat-val.amber{color:var(--amber)}.stat-val.green{color:var(--green)}
+.stat-hint{font-size:11px;color:var(--text3);margin-top:5px}
+.two-col{display:grid;grid-template-columns:1fr 350px;gap:16px;align-items:start}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden}
+.panel-head{padding:12px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.panel-title{font-size:13px;font-weight:600}
+.filter-tabs{display:flex;gap:5px}
+.ftab{font-size:11px;font-weight:500;padding:4px 11px;border-radius:20px;border:1px solid var(--border2);cursor:pointer;background:transparent;color:var(--text2);font-family:inherit;transition:all .15s}
+.ftab:hover{background:var(--surface2)}
+.ftab.active{background:var(--text);color:var(--bg);border-color:var(--text)}
+.t-head{display:grid;grid-template-columns:2fr .8fr 1.2fr .9fr 1.2fr .9fr;padding:9px 18px;background:var(--surface2);border-bottom:1px solid var(--border);font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px}
+.t-row{display:grid;grid-template-columns:2fr .8fr 1.2fr .9fr 1.2fr .9fr;padding:12px 18px;border-bottom:1px solid var(--border);align-items:center;cursor:pointer;transition:background .12s}
+.t-row:last-child{border-bottom:none}
+.t-row:hover{background:var(--surface2)}
+.t-row.sel{background:rgba(0,196,140,.05);border-left:2px solid var(--green);padding-left:16px}
+.p-name{font-size:13px;font-weight:500}
+.p-meta{font-size:11px;color:var(--text3);margin-top:1px}
+.s-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:4px}
+.s-on{background:var(--green);box-shadow:0 0 6px var(--green);animation:pulse 2s infinite}
+.s-off{background:var(--text3)}
+.badge{display:inline-block;font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;font-family:'IBM Plex Mono',monospace}
+.b-red{background:var(--red-dim);color:var(--red)}
+.b-amber{background:var(--amber-dim);color:var(--amber)}
+.b-green{background:var(--green-dim);color:var(--green)}
+.timer{font-size:12px;font-family:'IBM Plex Mono',monospace;font-weight:500}
+.t-red{color:var(--red)}.t-amber{color:var(--amber)}.t-green{color:var(--green)}
+.act-btn{font-size:11px;font-weight:500;padding:4px 10px;border-radius:6px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;font-family:inherit;transition:all .15s;white-space:nowrap}
+.act-btn:hover{background:var(--green);color:#000;border-color:var(--green)}
+.side-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden}
+.side-header{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:11px}
+.avatar{width:38px;height:38px;border-radius:50%;background:var(--green-dim);border:1px solid rgba(0,196,140,.3);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:var(--green);flex-shrink:0}
+.s-name{font-size:13px;font-weight:600}
+.s-sub{font-size:11px;color:var(--text3);margin-top:1px}
+.side-body{padding:14px 16px}
+.info-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border)}
+.info-row:last-child{border-bottom:none}
+.info-label{font-size:11px;color:var(--text3)}
+.info-val{font-size:12px;font-weight:500;color:var(--text)}
+.pmap-wrap{padding:14px 16px;border-top:1px solid var(--border)}
+.pmap-title{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px}
+.pmap-container{display:flex;justify-content:center;gap:18px;align-items:center}
+.pmap-legend{display:flex;flex-direction:column;gap:7px;font-size:11px;color:var(--text2)}
+.leg-row{display:flex;align-items:center;gap:7px}
+.leg-dot{width:11px;height:11px;border-radius:3px;flex-shrink:0}
+.alerts-wrap{padding:14px 16px;border-top:1px solid var(--border)}
+.alerts-title{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px}
+.alert-item{display:flex;gap:9px;align-items:flex-start;padding:9px 11px;border-radius:8px;margin-bottom:6px;font-size:12px}
+.ai-red{background:var(--red-dim);border:1px solid rgba(240,82,82,.15)}
+.ai-amber{background:var(--amber-dim);border:1px solid rgba(245,166,35,.15)}
+.ai-green{background:var(--green-dim);border:1px solid rgba(0,196,140,.15)}
+.ai-dot{width:6px;height:6px;border-radius:50%;background:currentColor;margin-top:4px;flex-shrink:0}
+.ai-red .ai-dot,.ai-red .ai-msg{color:var(--red)}
+.ai-amber .ai-dot,.ai-amber .ai-msg{color:var(--amber)}
+.ai-green .ai-dot,.ai-green .ai-msg{color:var(--green)}
+.ai-msg{flex:1;line-height:1.4}
+.ai-time{font-size:10px;opacity:.6;margin-top:2px;font-family:'IBM Plex Mono',monospace}
+.live-row{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text3);padding:9px 18px;border-bottom:1px solid var(--border);background:var(--surface2)}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 1.5s infinite}
+.report-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-bottom:16px}
+.report-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:18px}
+.rc-title{font-size:12px;font-weight:600;color:var(--text2);margin-bottom:14px;display:flex;align-items:center;gap:7px}
+.rc-title svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round}
+.bar-row{display:flex;align-items:center;gap:8px;margin-bottom:9px}
+.bar-label{font-size:11px;color:var(--text2);width:95px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar-track{flex:1;height:7px;background:var(--surface3);border-radius:4px;overflow:hidden}
+.bar-fill{height:100%;border-radius:4px;background:var(--green);transition:width .8s ease}
+.bar-fill.amber{background:var(--amber)}.bar-fill.red{background:var(--red)}
+.bar-val{font-size:11px;font-family:'IBM Plex Mono',monospace;color:var(--text2);width:38px;text-align:right;flex-shrink:0}
+.neglect-table{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden}
+.nt-head{display:grid;grid-template-columns:2fr 1.2fr 1fr 1fr 1.5fr;padding:9px 18px;background:var(--surface2);border-bottom:1px solid var(--border);font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px}
+.nt-row{display:grid;grid-template-columns:2fr 1.2fr 1fr 1fr 1.5fr;padding:11px 18px;border-bottom:1px solid var(--border);align-items:center;font-size:12px}
+.nt-row:last-child{border-bottom:none}
+.form-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:50;align-items:center;justify-content:center}
+.form-overlay.open{display:flex}
+.form-box{background:var(--surface);border:1px solid var(--border2);border-radius:var(--r-lg);padding:24px;width:480px;max-width:92vw}
+.form-title{font-size:15px;font-weight:600;margin-bottom:18px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+.fg{display:flex;flex-direction:column;gap:5px}
+.fg label{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px}
+.fg input,.fg select{padding:8px 11px;border:1px solid var(--border2);border-radius:7px;font-size:13px;font-family:inherit;color:var(--text);background:var(--surface2);width:100%;transition:border-color .15s}
+.fg input:focus,.fg select:focus{outline:none;border-color:var(--green)}
+.fg select option{background:var(--surface2)}
+.form-foot{display:flex;justify-content:flex-end;gap:8px}
+.empty{padding:28px;text-align:center;font-size:12px;color:var(--text3)}
+.hidden{display:none!important}
+@keyframes fadeIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+</style>
+</head>
+<body>
+<div class="layout">
+<aside class="sidebar">
+  <div class="logo-wrap">
+    <div class="logo-icon"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></div>
+    <div><div class="logo-name">MobiliCare</div><div class="logo-ver">v2.0 · sensor edition</div></div>
+  </div>
+  <nav class="nav">
+    <div class="nav-lbl">Monitor</div>
+    <div class="nav-item active" id="ni-dashboard" onclick="gotoView('dashboard')">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      Dashboard
+      <span class="nav-badge nb-red" id="nav-urg" style="display:none">0</span>
+    </div>
+    <div class="nav-item" id="ni-sensors" onclick="gotoView('sensors')">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
+      Live sensors
+    </div>
+    <div class="nav-lbl">Reports</div>
+    <div class="nav-item" id="ni-neglect" onclick="gotoView('neglect')">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      Neglect report
+      <span class="nav-badge nb-amber" id="nav-neg" style="display:none">0</span>
+    </div>
+    <div class="nav-item" id="ni-reports" onclick="gotoView('reports')">
+      <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      Analytics
+    </div>
+  </nav>
+  <div class="sidebar-foot"><strong>Ward Nurse</strong>St. James's Hospital</div>
+</aside>
+
+<div class="main">
+  <div class="topbar">
+    <div>
+      <div class="page-title" id="ptitle">Dashboard</div>
+      <div class="page-sub" id="psub">Real-time patient monitoring · sensor-connected</div>
+    </div>
+    <div class="topbar-right">
+      <span class="clock" id="clk"></span>
+      <button class="btn btn-green" onclick="openForm()">
+        <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Add patient
+      </button>
+    </div>
+  </div>
+
+  <div class="content">
+    <div id="alert-banner" class="alert-banner hidden">
+      <div class="alert-banner-dot"></div>
+      <div class="alert-banner-text" id="banner-txt"></div>
+      <div class="alert-banner-close" onclick="this.parentElement.classList.add('hidden')">✕</div>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div id="view-dashboard">
+      <div class="stats-row">
+        <div class="stat"><div class="stat-label">Patients</div><div class="stat-val" id="s-tot">8</div><div class="stat-hint">Active</div></div>
+        <div class="stat"><div class="stat-label">Urgent</div><div class="stat-val red" id="s-urg">2</div><div class="stat-hint">Repositioning overdue</div></div>
+        <div class="stat"><div class="stat-label">Due soon</div><div class="stat-val amber" id="s-due">3</div><div class="stat-hint">Within 30 min</div></div>
+        <div class="stat"><div class="stat-label">Sensors online</div><div class="stat-val green" id="s-sen">6</div><div class="stat-hint">Connected beds</div></div>
+      </div>
+      <div class="two-col">
+        <div class="panel">
+          <div class="live-row"><div class="live-dot"></div><span>Sensor feed live — auto-updates every 30 seconds</span></div>
+          <div class="panel-head">
+            <div class="panel-title">Patient list</div>
+            <div class="filter-tabs">
+              <button class="ftab active" onclick="setF('all',this)">All</button>
+              <button class="ftab" onclick="setF('urgent',this)">Urgent</button>
+              <button class="ftab" onclick="setF('due',this)">Due</button>
+              <button class="ftab" onclick="setF('ok',this)">OK</button>
+            </div>
+          </div>
+          <div class="t-head"><div>Patient</div><div>Sensor</div><div>Last repo.</div><div>In bed</div><div>Status</div><div>Action</div></div>
+          <div id="pt-list"></div>
+        </div>
+        <div class="side-panel" id="side-panel">
+          <div id="side-content"><div class="empty" style="padding:50px 20px;line-height:2">Select a patient<br>to view pressure map</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SENSORS -->
+    <div id="view-sensors" class="hidden">
+      <div class="stats-row">
+        <div class="stat"><div class="stat-label">Beds connected</div><div class="stat-val green" id="sv-on">6</div><div class="stat-hint">Sensor online</div></div>
+        <div class="stat"><div class="stat-label">High pressure</div><div class="stat-val red" id="sv-hp">0</div><div class="stat-hint">Critical zones</div></div>
+        <div class="stat"><div class="stat-label">No movement</div><div class="stat-val amber" id="sv-nm">0</div><div class="stat-hint">2+ hrs without turn</div></div>
+        <div class="stat"><div class="stat-label">Avg bed time</div><div class="stat-val" id="sv-avg">—</div><div class="stat-hint">Today</div></div>
+      </div>
+      <div id="sensor-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px"></div>
+    </div>
+
+    <!-- NEGLECT -->
+    <div id="view-neglect" class="hidden">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+        <div style="font-size:14px;font-weight:600">Neglect &amp; compliance report</div>
+        <button class="btn btn-green" onclick="exportRpt()">
+          <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export PDF
+        </button>
+      </div>
+      <div id="neglect-content"></div>
+    </div>
+
+    <!-- ANALYTICS -->
+    <div id="view-reports" class="hidden">
+      <div style="font-size:14px;font-weight:600;margin-bottom:16px">Analytics overview</div>
+      <div class="report-grid" id="analytics-content"></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- FORM -->
+<div class="form-overlay" id="form-overlay" onclick="if(event.target===this)closeForm()">
+  <div class="form-box">
+    <div class="form-title">Add new patient</div>
+    <div class="form-grid">
+      <div class="fg"><label>Full name</label><input id="fn" placeholder="e.g. Maria Santos"></div>
+      <div class="fg"><label>Age</label><input id="fa" type="number" placeholder="72"></div>
+      <div class="fg"><label>Ward / Room</label><input id="fw" placeholder="Ward 3 / Rm 7"></div>
+      <div class="fg"><label>Condition</label><input id="fc" placeholder="e.g. Hip fracture"></div>
+      <div class="fg"><label>Risk level</label><select id="fr"><option value="High">High</option><option value="Medium" selected>Medium</option><option value="Low">Low</option></select></div>
+      <div class="fg"><label>Reposition every</label><select id="fi"><option value="2">2 hours</option><option value="3">3 hours</option><option value="4">4 hours</option></select></div>
+    </div>
+    <div class="form-foot">
+      <button class="btn" onclick="closeForm()">Cancel</button>
+      <button class="btn btn-green" onclick="addPt()">Save patient</button>
+    </div>
+  </div>
+</div>
+
+<script>
+var pts=[
+  {id:1,name:"James O'Brien",age:78,ward:"Ward 2/Rm 4",risk:"High",cond:"Stroke recovery",ivl:2,lastRepo:195,inBed:310,ini:"JO",sensor:true,
+   pressure:[0,1,2,2,1,0,0,2,3,3,2,0,0,3,4,4,3,0,0,2,3,3,2,0,0,1,2,2,1,0,0,0,1,1,0,0],
+   events:[{t:"13:20",msg:"High pressure — sacrum region detected",sev:"urgent"},{t:"11:45",msg:"Repositioning overdue by 15 min",sev:"urgent"},{t:"09:30",msg:"Repositioned — left lateral",sev:"ok"}]},
+  {id:2,name:"Fatima Al-Rashid",age:65,ward:"Ward 1/Rm 8",risk:"High",cond:"Hip fracture",ivl:2,lastRepo:140,inBed:420,ini:"FA",sensor:true,
+   pressure:[0,0,1,1,0,0,0,1,2,2,1,0,0,2,3,2,1,0,0,1,2,2,1,0,0,1,1,1,0,0,0,0,0,1,0,0],
+   events:[{t:"12:10",msg:"Repositioning due in 10 min",sev:"warn"},{t:"10:00",msg:"Repositioned — right lateral",sev:"ok"}]},
+  {id:3,name:"Patrick Dunne",age:82,ward:"Ward 3/Rm 2",risk:"High",cond:"Dementia",ivl:2,lastRepo:95,inBed:180,ini:"PD",sensor:false,
+   pressure:[0,0,1,1,0,0,0,1,2,1,0,0,0,1,2,2,1,0,0,1,1,1,0,0,0,0,1,0,0,0,0,0,0,0,0,0],
+   events:[{t:"12:30",msg:"Sensor not connected — manual tracking only",sev:"warn"},{t:"11:00",msg:"Repositioned — logged manually",sev:"ok"}]},
+  {id:4,name:"Aoife Murphy",age:71,ward:"Ward 2/Rm 11",risk:"Medium",cond:"Post-op knee",ivl:3,lastRepo:155,inBed:240,ini:"AM",sensor:true,
+   pressure:[0,0,0,1,0,0,0,1,1,2,1,0,0,1,2,2,1,0,0,1,2,2,1,0,0,0,1,1,0,0,0,0,0,0,0,0],
+   events:[{t:"12:55",msg:"Repositioning due in 25 min",sev:"warn"}]},
+  {id:5,name:"George Okonkwo",age:69,ward:"Ward 1/Rm 3",risk:"Medium",cond:"Pneumonia",ivl:3,lastRepo:170,inBed:290,ini:"GO",sensor:true,
+   pressure:[0,0,1,1,0,0,0,0,2,2,1,0,0,1,2,3,2,0,0,0,2,2,1,0,0,0,1,1,0,0,0,0,0,0,0,0],
+   events:[{t:"13:00",msg:"Repositioning overdue — check patient",sev:"urgent"},{t:"10:30",msg:"Repositioned — semi-fowler 45°",sev:"ok"}]},
+  {id:6,name:"Brigid Walsh",age:74,ward:"Ward 4/Rm 6",risk:"Medium",cond:"Cardiac monitoring",ivl:3,lastRepo:80,inBed:150,ini:"BW",sensor:true,
+   pressure:[0,0,0,0,0,0,0,0,1,1,0,0,0,0,1,1,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+   events:[{t:"13:10",msg:"Vitals stable — on schedule",sev:"ok"}]},
+  {id:7,name:"Liam Byrne",age:55,ward:"Ward 3/Rm 9",risk:"Low",cond:"Appendectomy",ivl:4,lastRepo:45,inBed:90,ini:"LB",sensor:false,
+   pressure:[0,0,0,0,0,0,0,0,0,1,0,0,0,0,1,1,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+   events:[{t:"12:45",msg:"Patient mobile — walked corridor",sev:"ok"}]},
+  {id:8,name:"Siobhan Kelly",age:60,ward:"Ward 4/Rm 1",risk:"Low",cond:"Obs — stable",ivl:4,lastRepo:30,inBed:75,ini:"SK",sensor:true,
+   pressure:[0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+   events:[{t:"13:15",msg:"All clear — no pressure alerts",sev:"ok"}]}
+];
+
+var selId=null,curFilter='all',curView='dashboard';
+
+function status(p){var pct=p.lastRepo/(p.ivl*60);return pct>=1?'urgent':pct>=.75?'due':'ok';}
+function fmt(m){if(m===0)return'Just now';if(m<60)return m+'m';var h=Math.floor(m/60),mn=m%60;return h+'h'+(mn>0?' '+mn+'m':'');}
+function rBadge(r){return'<span class="badge '+(r==='High'?'b-red':r==='Medium'?'b-amber':'b-green')+'">'+r+'</span>';}
+function sBadge(p){var s=status(p),rem=Math.round((p.ivl*60)-p.lastRepo);if(s==='urgent')return'<span class="badge b-red">+'+fmt(Math.abs(rem))+'</span>';if(s==='due')return'<span class="badge b-amber">Due '+fmt(rem)+'</span>';return'<span class="badge b-green">In '+fmt(rem)+'</span>';}
+function tCls(p){var s=status(p);return s==='urgent'?'t-red':s==='due'?'t-amber':'t-green';}
+
+function pColor(v){return['transparent','rgba(0,196,140,.4)','rgba(245,166,35,.55)','rgba(240,82,82,.45)','rgba(240,82,82,.82)'][Math.min(v,4)];}
+
+function buildMap(p){
+  var g=p.pressure,cols=6,rows=6,cw=14,ch=28,ox=3,oy=3;
+  var cells='';
+  for(var r=0;r<rows;r++)for(var c=0;c<cols;c++){var v=g[r*cols+c];if(v>0)cells+='<rect x="'+(ox+c*cw)+'" y="'+(oy+r*ch)+'" width="'+cw+'" height="'+ch+'" rx="3" fill="'+pColor(v)+'"/>';}
+  var body='<ellipse cx="45" cy="17" rx="11" ry="13" fill="var(--surface3)" stroke="var(--border2)" stroke-width="1"/>'+
+    '<rect x="30" y="30" width="30" height="65" rx="8" fill="var(--surface3)" stroke="var(--border2)" stroke-width="1"/>'+
+    '<rect x="18" y="32" width="11" height="42" rx="5" fill="var(--surface3)" stroke="var(--border2)" stroke-width="1"/>'+
+    '<rect x="61" y="32" width="11" height="42" rx="5" fill="var(--surface3)" stroke="var(--border2)" stroke-width="1"/>'+
+    '<rect x="30" y="96" width="13" height="46" rx="5" fill="var(--surface3)" stroke="var(--border2)" stroke-width="1"/>'+
+    '<rect x="47" y="96" width="13" height="46" rx="5" fill="var(--surface3)" stroke="var(--border2)" stroke-width="1"/>';
+  return'<svg viewBox="0 0 90 148" width="90" height="148" xmlns="http://www.w3.org/2000/svg">'+body+cells+'</svg>';
+}
+
+function renderTable(){
+  var list=pts.filter(function(p){
+    if(curFilter==='urgent')return status(p)==='urgent';
+    if(curFilter==='due')return status(p)==='due';
+    if(curFilter==='ok')return status(p)==='ok';
+    return true;
+  });
+  var h='';
+  list.forEach(function(p){
+    var sel=p.id===selId?' sel':'';
+    h+='<div class="t-row'+sel+'" onclick="selPt('+p.id+')">';
+    h+='<div><div class="p-name">'+p.name+'</div><div class="p-meta">'+p.ward+' · '+p.cond+'</div></div>';
+    h+='<div><span class="s-dot '+(p.sensor?'s-on':'s-off')+'"></span><span style="font-size:11px;color:var(--text3)">'+(p.sensor?'Online':'Offline')+'</span></div>';
+    h+='<div class="timer '+tCls(p)+'">'+fmt(p.lastRepo)+' ago</div>';
+    h+='<div style="font-size:12px;color:var(--text2);font-family:\'IBM Plex Mono\'">'+fmt(p.inBed)+'</div>';
+    h+='<div>'+sBadge(p)+'</div>';
+    h+='<div><button class="act-btn" onclick="repo(event,'+p.id+')">Repositioned</button></div>';
+    h+='</div>';
+  });
+  if(!h)h='<div class="empty">No patients in this category</div>';
+  document.getElementById('pt-list').innerHTML=h;
+  updateStats();
+}
+
+function selPt(id){
+  selId=id;
+  var p=pts.find(function(x){return x.id===id;});
+  var maxP=Math.max.apply(null,p.pressure);
+  var pSt=maxP>=3?'<span class="badge b-red">Critical pressure</span>':maxP>=2?'<span class="badge b-amber">Moderate pressure</span>':'<span class="badge b-green">Low pressure</span>';
+  var alerts='';
+  p.events.forEach(function(ev){
+    var cls=ev.sev==='urgent'?'ai-red':ev.sev==='warn'?'ai-amber':'ai-green';
+    alerts+='<div class="alert-item '+cls+'"><div class="ai-dot"></div><div class="ai-msg">'+ev.msg+'<div class="ai-time">'+ev.t+'</div></div></div>';
+  });
+  document.getElementById('side-content').innerHTML=
+    '<div class="side-header"><div class="avatar">'+p.ini+'</div><div><div class="s-name">'+p.name+'</div><div class="s-sub">'+p.ward+' · Age '+p.age+'</div></div></div>'+
+    '<div class="side-body">'+
+    '<div class="info-row"><span class="info-label">Risk</span><span>'+rBadge(p.risk)+'</span></div>'+
+    '<div class="info-row"><span class="info-label">Sensor</span><span class="info-val"><span class="s-dot '+(p.sensor?'s-on':'s-off')+'" style="margin-right:5px"></span>'+(p.sensor?'Online':'Offline')+'</span></div>'+
+    '<div class="info-row"><span class="info-label">Last repositioned</span><span class="info-val '+tCls(p)+'">'+fmt(p.lastRepo)+' ago</span></div>'+
+    '<div class="info-row"><span class="info-label">Total bed time</span><span class="info-val">'+fmt(p.inBed)+'</span></div>'+
+    '<div class="info-row"><span class="info-label">Pressure zones</span><span>'+pSt+'</span></div>'+
+    '<div class="info-row"><span class="info-label">Interval</span><span class="info-val">Every '+p.ivl+' h</span></div>'+
+    '</div>'+
+    '<div class="pmap-wrap">'+
+    '<div class="pmap-title">Pressure map — body zones</div>'+
+    '<div class="pmap-container">'+
+    '<div>'+buildMap(p)+'</div>'+
+    '<div class="pmap-legend">'+
+    '<div style="font-size:10px;color:var(--text3);margin-bottom:5px;font-weight:600;text-transform:uppercase;letter-spacing:.5px">Pressure</div>'+
+    '<div class="leg-row"><div class="leg-dot" style="background:rgba(0,196,140,.5)"></div>Low</div>'+
+    '<div class="leg-row"><div class="leg-dot" style="background:rgba(245,166,35,.6)"></div>Moderate</div>'+
+    '<div class="leg-row"><div class="leg-dot" style="background:rgba(240,82,82,.5)"></div>High</div>'+
+    '<div class="leg-row"><div class="leg-dot" style="background:rgba(240,82,82,.9)"></div>Critical</div>'+
+    '<div style="margin-top:10px;font-size:10px;color:var(--text3)">Source<br><strong style="color:var(--text2)">'+(p.sensor?'Live sensor':'Manual')+'</strong></div>'+
+    '</div></div></div>'+
+    '<div class="alerts-wrap">'+
+    '<div class="alerts-title">Event log</div>'+alerts+
+    '<div style="margin-top:10px"><button class="act-btn" style="font-size:12px;padding:6px 14px" onclick="repo(event,'+p.id+')">Mark repositioned now</button></div>'+
+    '</div>';
+  if(status(p)==='urgent')showBanner(p.name+' — repositioning overdue. Immediate action required.');
+  renderTable();
+}
+
+function repo(e,id){
+  e.stopPropagation();
+  var p=pts.find(function(x){return x.id===id;});
+  p.lastRepo=0;
+  var now=new Date(),t=(now.getHours()+'').padStart(2,'0')+':'+(now.getMinutes()+'').padStart(2,'0');
+  p.events.unshift({t:t,msg:'Patient repositioned — logged by nurse',sev:'ok'});
+  if(selId===id)selPt(id);
+  renderTable();
+  if(curView==='sensors')renderSensors();
+}
+
+function setF(f,btn){
+  curFilter=f;
+  document.querySelectorAll('.ftab').forEach(function(b){b.classList.remove('active');});
+  btn.classList.add('active');
+  selId=null;
+  document.getElementById('side-content').innerHTML='<div class="empty" style="padding:50px 20px;line-height:2">Select a patient<br>to view pressure map</div>';
+  renderTable();
+}
+
+function updateStats(){
+  var u=0,d=0,on=0;
+  pts.forEach(function(p){var s=status(p);if(s==='urgent')u++;else if(s==='due')d++;if(p.sensor)on++;});
+  document.getElementById('s-tot').textContent=pts.length;
+  document.getElementById('s-urg').textContent=u;
+  document.getElementById('s-due').textContent=d;
+  document.getElementById('s-sen').textContent=on;
+  var nb=document.getElementById('nav-urg');
+  nb.textContent=u; nb.style.display=u>0?'':'none';
+  var nn=document.getElementById('nav-neg');
+  var neg=pts.filter(function(p){return status(p)==='urgent';}).length;
+  nn.textContent=neg; nn.style.display=neg>0?'':'none';
+}
+
+function renderSensors(){
+  var hp=0,nm=0,on=0,totalBed=0;
+  var h='';
+  pts.forEach(function(p){
+    var mp=Math.max.apply(null,p.pressure);
+    var s=status(p);
+    if(p.sensor)on++;
+    if(mp>=3)hp++;
+    if(s==='urgent')nm++;
+    totalBed+=p.inBed;
+    var bc=mp>=3?'rgba(240,82,82,.3)':s==='urgent'?'rgba(240,82,82,.15)':'var(--border)';
+    h+='<div style="background:var(--surface);border:1px solid '+bc+';border-radius:var(--r-lg);overflow:hidden;cursor:pointer;transition:border-color .15s" onclick="gotoView(\'dashboard\');setTimeout(function(){selPt('+p.id+')},50)">';
+    h+='<div style="padding:12px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">';
+    h+='<div><div style="font-size:13px;font-weight:600">'+p.name+'</div><div style="font-size:11px;color:var(--text3);margin-top:1px">'+p.ward+'</div></div>';
+    h+='<span class="s-dot '+(p.sensor?'s-on':'s-off')+'" style="width:10px;height:10px"></span>';
+    h+='</div>';
+    h+='<div style="padding:14px;display:flex;justify-content:center">'+buildMap(p)+'</div>';
+    h+='<div style="padding:10px 14px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">';
+    h+=sBadge(p)+'<span style="font-size:11px;color:var(--text3);font-family:\'IBM Plex Mono\'">'+fmt(p.inBed)+'</span>';
+    h+='</div></div>';
+  });
+  document.getElementById('sensor-grid').innerHTML=h;
+  document.getElementById('sv-on').textContent=on;
+  document.getElementById('sv-hp').textContent=hp;
+  document.getElementById('sv-nm').textContent=nm;
+  var avg=Math.round(totalBed/pts.length);
+  document.getElementById('sv-avg').textContent=Math.floor(avg/60)+'h'+((avg%60)>0?' '+(avg%60)+'m':'');
+}
+
+function renderNeglect(){
+  var incidents=pts.filter(function(p){return status(p)==='urgent';});
+  var h='<div class="report-grid">';
+  h+='<div class="report-card"><div class="rc-title"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Repositioning compliance</div>';
+  pts.forEach(function(p){
+    var pct=Math.round(100-Math.min(100,Math.round((p.lastRepo/(p.ivl*60))*100)));
+    h+='<div class="bar-row"><div class="bar-label">'+p.name.split(' ')[0]+'</div><div class="bar-track"><div class="bar-fill '+(pct<50?'red':pct<80?'amber':'')+'" style="width:'+Math.max(pct,3)+'%"></div></div><div class="bar-val">'+pct+'%</div></div>';
+  });
+  h+='</div>';
+  h+='<div class="report-card"><div class="rc-title"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>Bed time today</div>';
+  var mx=Math.max.apply(null,pts.map(function(p){return p.inBed;}));
+  pts.forEach(function(p){
+    var pct=Math.round((p.inBed/mx)*100);
+    h+='<div class="bar-row"><div class="bar-label">'+p.name.split(' ')[0]+'</div><div class="bar-track"><div class="bar-fill '+(p.inBed>360?'red':p.inBed>240?'amber':'')+'" style="width:'+Math.max(pct,3)+'%"></div></div><div class="bar-val">'+fmt(p.inBed)+'</div></div>';
+  });
+  h+='</div></div>';
+  h+='<div style="font-size:13px;font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:8px">Flagged incidents <span class="badge '+(incidents.length>0?'b-red':'b-green')+'">'+incidents.length+'</span></div>';
+  h+='<div class="neglect-table">';
+  h+='<div class="nt-head"><div>Patient</div><div>Ward</div><div>Overdue by</div><div>Risk</div><div>Severity</div></div>';
+  if(!incidents.length){
+    h+='<div class="empty">No neglect incidents recorded — all patients on schedule</div>';
+  } else {
+    incidents.forEach(function(p){
+      var over=Math.max(0,p.lastRepo-(p.ivl*60));
+      var sev=over>60?100:over>30?65:40;
+      var sc=sev>=80?'var(--red)':sev>=55?'var(--amber)':'var(--amber)';
+      h+='<div class="nt-row">';
+      h+='<div><div style="font-size:13px;font-weight:500">'+p.name+'</div><div style="font-size:11px;color:var(--text3)">'+p.cond+'</div></div>';
+      h+='<div style="font-size:12px;color:var(--text2)">'+p.ward+'</div>';
+      h+='<div class="timer t-red">+'+fmt(over)+'</div>';
+      h+='<div>'+rBadge(p.risk)+'</div>';
+      h+='<div style="display:flex;align-items:center;gap:8px"><div style="height:5px;border-radius:3px;width:'+sev+'%;max-width:80px;background:'+sc+'"></div><span style="font-size:10px;font-family:\'IBM Plex Mono\';color:var(--text2)">'+sev+'%</span></div>';
+      h+='</div>';
+    });
+  }
+  h+='</div>';
+  document.getElementById('neglect-content').innerHTML=h;
+}
+
+function renderAnalytics(){
+  var h='';
+  h+='<div class="report-card"><div class="rc-title">Risk distribution</div>';
+  var rc={High:0,Medium:0,Low:0};
+  pts.forEach(function(p){rc[p.risk]++;});
+  [['High',rc.High,'red'],['Medium',rc.Medium,'amber'],['Low',rc.Low,'']].forEach(function(r){
+    var pct=Math.round((r[1]/pts.length)*100);
+    h+='<div class="bar-row"><div class="bar-label">'+r[0]+' risk</div><div class="bar-track"><div class="bar-fill '+r[2]+'" style="width:'+(pct||2)+'%"></div></div><div class="bar-val">'+r[1]+' pt</div></div>';
+  });
+  h+='</div>';
+  h+='<div class="report-card"><div class="rc-title">Alert status</div>';
+  var u=pts.filter(function(p){return status(p)==='urgent';}).length;
+  var d=pts.filter(function(p){return status(p)==='due';}).length;
+  var o=pts.filter(function(p){return status(p)==='ok';}).length;
+  [['Urgent',u,'red'],['Due soon',d,'amber'],['On schedule',o,'']].forEach(function(r){
+    var pct=Math.round((r[1]/pts.length)*100);
+    h+='<div class="bar-row"><div class="bar-label">'+r[0]+'</div><div class="bar-track"><div class="bar-fill '+r[2]+'" style="width:'+(pct||2)+'%"></div></div><div class="bar-val">'+r[1]+'</div></div>';
+  });
+  h+='</div>';
+  h+='<div class="report-card"><div class="rc-title">Sensor coverage</div>';
+  var sonl=pts.filter(function(p){return p.sensor;}).length;
+  [['Connected',sonl,''],['Offline',pts.length-sonl,'red']].forEach(function(r){
+    var pct=Math.round((r[1]/pts.length)*100);
+    h+='<div class="bar-row"><div class="bar-label">'+r[0]+'</div><div class="bar-track"><div class="bar-fill '+r[2]+'" style="width:'+(pct||2)+'%"></div></div><div class="bar-val">'+r[1]+' beds</div></div>';
+  });
+  h+='</div>';
+  h+='<div class="report-card"><div class="rc-title">Peak pressure by patient</div>';
+  pts.forEach(function(p){
+    var mp=Math.max.apply(null,p.pressure);
+    var pct=Math.round((mp/4)*100);
+    h+='<div class="bar-row"><div class="bar-label">'+p.name.split(' ')[0]+'</div><div class="bar-track"><div class="bar-fill '+(mp>=3?'red':mp>=2?'amber':'')+'" style="width:'+(pct||2)+'%"></div></div><div class="bar-val">Lv '+mp+'</div></div>';
+  });
+  h+='</div>';
+  document.getElementById('analytics-content').innerHTML=h;
+}
+
+function gotoView(v){
+  curView=v;
+  ['dashboard','sensors','neglect','reports'].forEach(function(n){
+    document.getElementById('view-'+n).classList.toggle('hidden',n!==v);
+    document.getElementById('ni-'+n).classList.toggle('active',n===v);
+  });
+  var t={dashboard:'Dashboard',sensors:'Live sensors',neglect:'Neglect report',reports:'Analytics'};
+  var s={dashboard:'Real-time patient monitoring · sensor-connected',sensors:'Bed sensor feed · pressure maps per patient',neglect:'Repositioning compliance & incident log',reports:'Ward overview & statistics'};
+  document.getElementById('ptitle').textContent=t[v];
+  document.getElementById('psub').textContent=s[v];
+  if(v==='sensors')renderSensors();
+  if(v==='neglect')renderNeglect();
+  if(v==='reports')renderAnalytics();
+}
+
+function showBanner(msg){
+  document.getElementById('banner-txt').textContent=msg;
+  document.getElementById('alert-banner').classList.remove('hidden');
+}
+
+function openForm(){document.getElementById('form-overlay').classList.add('open');}
+function closeForm(){document.getElementById('form-overlay').classList.remove('open');}
+function addPt(){
+  var name=document.getElementById('fn').value.trim();
+  if(!name){alert('Please enter a name');return;}
+  var ini=name.split(' ').map(function(w){return w[0]||'';}).join('').substring(0,2).toUpperCase();
+  var now=new Date(),t=(now.getHours()+'').padStart(2,'0')+':'+(now.getMinutes()+'').padStart(2,'0');
+  pts.unshift({id:Date.now(),name:name,age:parseInt(document.getElementById('fa').value)||65,
+    ward:document.getElementById('fw').value||'Ward 1',risk:document.getElementById('fr').value,
+    cond:document.getElementById('fc').value||'—',ivl:parseInt(document.getElementById('fi').value),
+    lastRepo:0,inBed:0,ini:ini,sensor:false,pressure:Array(36).fill(0),
+    events:[{t:t,msg:'Patient admitted — monitoring started',sev:'ok'}]});
+  closeForm();
+  ['fn','fa','fw','fc'].forEach(function(id){document.getElementById(id).value='';});
+  renderTable();
+}
+
+function exportRpt(){
+  alert('In the full production version:\n\nA PDF report would be generated containing:\n• Complete incident log with timestamps\n• Compliance rate per nurse shift\n• Pressure zone history per patient\n• Ward-level neglect summary\n• Automatically sent to ward manager');
+}
+
+function tick(){
+  var n=new Date();
+  document.getElementById('clk').textContent=(n.getHours()+'').padStart(2,'0')+':'+(n.getMinutes()+'').padStart(2,'0')+':'+(n.getSeconds()+'').padStart(2,'0');
+}
+tick(); setInterval(tick,1000);
+renderTable();
+updateStats();
+</script>
+</body>
+</html>
